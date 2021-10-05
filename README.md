@@ -46,6 +46,17 @@ Für Teilnehmerbeschränkung entsprechend
     python3 run.py students.txt
 
 
+Entwicklungshinweise
+--------------------
+
+Wer ein besseres System als den T470s bestitzt, will vielleicht die Kameraauflösung in `run.py:15` hochdrehen -- sie ist derzeit auf 640×480 eingestellt:
+
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH,640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT,480)
+
+Die Standardausgabe gibt derzeit Zertifikatsinformationen aus, auf dem Fehlerstrom fallen die Namen raus.
+
+
 Weiterführende Informationen
 ----------------------------
 
