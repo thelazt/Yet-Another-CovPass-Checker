@@ -14,7 +14,7 @@ Auf dem Bildschirm wird die Webcamausgabe angezeigt, erkannte QR Codes werden fa
  * gelb (mit Namen): verifizierter QR-Code eines nicht angemeldeten Teilnehmers (siehe unten)
  * rot: Invalider QR-Code oder ungültiger Ausweis
 
-Die Anzahl der erfolgreichen (eindeutigen & ggf. angemeldeten) Eingaben wird oben links in der Ecke angezeigt (im Beispiel: 2) -- im Idealfall entspricht es der Anzahl der Personen im Raum.
+Die Anzahl der erfolgreichen (eindeutigen) Eingaben wird oben links in der Ecke angezeigt (im Beispiel: 2) -- im Idealfall entspricht es der Anzahl der Personen im Raum.
 
 
 **Problem:** (Personal)Ausweise werden nicht kontrolliert.
@@ -25,6 +25,9 @@ Somit könnte z.B. von der Oma der Impfausweis im Handy abgespeichert und vorgez
 Dazu einfach eine Datei mit zeilenweise Nachname und Vorname (getrennt durch ein `;`) der angemeldeter Teilnehmer erstellen -- schon werden Namen, welche sich nicht auf der Liste befinden, in gelber Farbe angezeigt und nicht mit gezählt.
 
 Nicht perfekt, aber besser als nichts.
+
+
+Zum Beenden die Taste `q` drücken.
 
 
 Benutzung
