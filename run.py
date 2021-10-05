@@ -19,8 +19,8 @@ font_duplex = cv2.FONT_HERSHEY_DUPLEX
 
 qrcodes={}
 process=[]
+uniqusers=[]
 validusers=0
-
 EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 print("Downloading...")
@@ -77,7 +77,7 @@ while(cap.isOpened()):
             qrcode = decodedObject.data.decode('ascii')
             if qrcode in qrcodes:
                 if qrcodes[qrcode]['valid']:
-                    if len(allowed) == 0 or qrcodes[ehc_code]['allowed']:
+                    if qrcodes[ehc_code]['unique'] and (len(allowed) == 0 or qrcodes[ehc_code]['allowed']):
                         color = (119,155,0)
                     else:
                         color = (19,147,201)
@@ -122,6 +122,14 @@ while(cap.isOpened()):
             gn = normalize(ehc_payload[-260][1]['nam']['gn'])
             fn = normalize(ehc_payload[-260][1]['nam']['fn'])
             qrcodes[ehc_code]['name'] = gn + ' ' + fn
+            uid = ehc_payload[-260][1]['nam']['fnt'] + '<<<' + ehc_payload[-260][1]['nam']['gnt']  + '<<<<' + ehc_payload[-260][1]['dob']
+            qrcodes[ehc_code]['uid'] = uid
+            if uid in uniqusers:
+                print(uid, "not unique!")
+                qrcodes[ehc_code]['unique'] = False
+            else:
+                uniqusers.append(uid)
+                qrcodes[ehc_code]['unique'] = True
             qrcodes[ehc_code]['valid'] = validate(ehc_msg, ehc_payload)
             if qrcodes[ehc_code]['valid']:
                 if len(allowed) > 0:
