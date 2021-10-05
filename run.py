@@ -9,6 +9,7 @@ import time
 import pyzbar.pyzbar as pyzbar
 import numpy as np
 import cv2
+import unicodedata
 
 cap = cv2.VideoCapture(0)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH,640)
@@ -31,6 +32,12 @@ if not certs:
 
 print("Ready...")
 
+normalize_mapping = [ ('Ä', 'Ae'), ('Ö', 'Oe'), ('Ü', 'Ue'), ('ä', 'ae'), ('ö', 'oe'), ('ü', 'ue'), ('ß', 'ss') ]
+def normalize(s):
+    for f, t in normalize_mapping:
+       s = s.replace(f, t)
+    return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn').strip()
+
 def validate(ehc_msg, ehc_payload):
     try:
         issued_at = EPOCH + timedelta(seconds=ehc_payload[6])
@@ -45,6 +52,13 @@ def validate(ehc_msg, ehc_payload):
     except:
         print('Failed', sys.exc_info())
     return False
+
+allowed=[]
+if len(sys.argv) > 1:
+    with open(sys.argv[1], "r") as data:
+        for line in data.readlines():
+            allowed.append(normalize(line).split(";"))
+    print("Only allowed person")
 
 if not(cap.isOpened()):
     cap.open(device)
@@ -63,7 +77,10 @@ while(cap.isOpened()):
             qrcode = decodedObject.data.decode('ascii')
             if qrcode in qrcodes:
                 if qrcodes[qrcode]['valid']:
-                    color = (119,155,0)
+                    if len(allowed) == 0 or qrcodes[ehc_code]['allowed']:
+                        color = (119,155,0)
+                    else:
+                        color = (19,147,201)
                 else:
                     color = (41,20,141)
                 text = qrcodes[qrcode]['name']
@@ -102,11 +119,24 @@ while(cap.isOpened()):
         try:
             ehc_msg = decode_ehc(ehc_code)
             ehc_payload = cbor2.loads(ehc_msg.payload)
-            qrcodes[ehc_code]['name'] = ehc_payload[-260][1]['nam']['gn'] + ' ' + ehc_payload[-260][1]['nam']['fn']
+            gn = normalize(ehc_payload[-260][1]['nam']['gn'])
+            fn = normalize(ehc_payload[-260][1]['nam']['fn'])
+            qrcodes[ehc_code]['name'] = gn + ' ' + fn
             qrcodes[ehc_code]['valid'] = validate(ehc_msg, ehc_payload)
             if qrcodes[ehc_code]['valid']:
-                print(qrcodes[ehc_code]['name'], file=sys.stderr)
-                validusers = validusers + 1
+                if len(allowed) > 0:
+                    qrcodes[ehc_code]['allowed'] = False
+                    gnt = ehc_payload[-260][1]['nam']['gnt'].replace('<',' ')
+                    fnt = ehc_payload[-260][1]['nam']['fnt'].replace('<',' ')
+                    for a in allowed:
+                        if (fn in a[0] and gn in a[1]) or (fnt in a[0].upper() and gnt in a[1].upper()):
+                            qrcodes[ehc_code]['allowed'] = True
+                            break
+                if len(allowed) == 0 or qrcodes[ehc_code]['allowed']:
+                    validusers = validusers + 1
+                    print(qrcodes[ehc_code]['name'], file=sys.stderr)
+                else:
+                    print(qrcodes[ehc_code]['name'], "(but not in list)", file=sys.stderr)
         except:
             qrcodes[ehc_code]['valid'] = False
             if not 'name' in qrcodes[ehc_code]:

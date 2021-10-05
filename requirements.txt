@@ -1,0 +1,16 @@
+base45>=0.1.1
+cbor2>=5.2.0
+cose>=0.9.dev8
+cryptography>=3.4.7
+pyzbar
+requests
+pillow
+python-jose[cryptography]
+jwcrypto
+python-dateutil
+lxml
+asn1crypto
+pdf2image
+pycv2
+opencv-python
+numpy
