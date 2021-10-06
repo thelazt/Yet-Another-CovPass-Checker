@@ -11,11 +11,20 @@ import numpy as np
 import cv2
 import unicodedata
 
-cap = cv2.VideoCapture(0)
-cap.set(cv2.CAP_PROP_FRAME_WIDTH,640)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT,480)
+# Webcam 
+# device (X = /dev/videoX)
+WEBCAM_DEVICE = 0
+WEBCAM_WIDTH = 1280
+WEBCAM_HEIGHT = 720
+WINDOW_NAME = 'CovPass Check'
+
+
+cap = cv2.VideoCapture(WEBCAM_DEVICE)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH,WEBCAM_WIDTH)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT,WEBCAM_HEIGHT)
 font_simplex = cv2.FONT_HERSHEY_SIMPLEX
 font_duplex = cv2.FONT_HERSHEY_DUPLEX
+cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
 
 qrcodes={}
 process=[]
@@ -60,9 +69,10 @@ if len(sys.argv) > 1:
             allowed.append(normalize(line).split(";"))
     print("Only allowed person")
 
-if not(cap.isOpened()):
-    cap.open(device)
-while(cap.isOpened()):
+if not cap.isOpened():
+    cap.open(WEBCAM_DEVICE)
+
+while cap.isOpened():
     # Capture frame-by-frame
     ret, frame = cap.read()
     # Our operations on the frame come here
@@ -110,7 +120,7 @@ while(cap.isOpened()):
     # Full counter
     cv2.putText(frame, str(validusers), (10, 60), cv2.FONT_HERSHEY_DUPLEX, 2, (119,155,0), 4, cv2.LINE_AA)
     # Display the resulting frame
-    cv2.imshow('frame',frame)
+    cv2.imshow(WINDOW_NAME, frame)
 
     # Check unprocessed qr codes
     for ehc_code in process:
