@@ -39,22 +39,15 @@ Rekursiv (mit Submodule) klonen, Abhängigkeiten installieren und ausführen, z.
     cd covpass-check
     sudo apt install libzbar0
     pip3 install -r requirements.txt
-    python3 run.py
+    python3 webcam.py
 
-Für Teilnehmerbeschränkung entsprechend
+Weitere Informationen via
 
-    python3 run.py students.txt
+    python3 webcam.py -h
 
+Für akustische Teilnehmerbeschränkung bei einer geringen Webcamauflösung beispielsweise
 
-Entwicklungshinweise
---------------------
-
-Wer ein besseres System als den T470s bestitzt, will vielleicht die Kameraauflösung in `run.py:15` hochdrehen -- sie ist derzeit auf 640×480 eingestellt:
-
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH,640)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT,480)
-
-Die Standardausgabe gibt derzeit Zertifikatsinformationen aus, auf dem Fehlerstrom fallen die Namen raus.
+    python3 webcam.py -a students.txt -s -r 640x480 -l log.txt
 
 
 Weiterführende Informationen
@@ -62,3 +55,6 @@ Weiterführende Informationen
 
  * https://github.com/panzi/verify-ehc
  * https://github.com/Digitaler-Impfnachweis/certification-apis
+ 
+Audiodateien von
+ * https://notificationsounds.com/

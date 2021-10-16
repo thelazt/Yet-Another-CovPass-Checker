@@ -14,3 +14,4 @@ pdf2image
 pycv2
 opencv-python
 numpy
+playsound
