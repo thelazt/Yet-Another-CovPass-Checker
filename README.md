@@ -37,7 +37,7 @@ Rekursiv (mit Submodule) klonen, Abhängigkeiten installieren und ausführen, z.
 
     git clone git@gitlab.cs.fau.de:heinloth/covpass-check.git --recursive
     cd covpass-check
-    sudo apt install libzbar0
+    sudo apt install zenity libzbar0
     pip3 install -r requirements.txt
     python3 webcam.py
 
@@ -48,6 +48,13 @@ Weitere Informationen via
 Für akustische Teilnehmerbeschränkung bei einer geringen Webcamauflösung beispielsweise
 
     python3 webcam.py -a students.txt -s -r 640x480 -l log.txt
+
+Für den Übungsbetrieb einfach die Teilnehmerliste(n) der Veranstaltung(en) im
+oben beschriebenen`.csv` Format in den Ordner legen und schlicht
+
+    ./start.sh
+
+ausführen (bei Bedarf die Parameter in der Variable `PARAMS` anpassen).
 
 
 Weiterführende Informationen
