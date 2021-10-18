@@ -1,7 +1,6 @@
 __pycache__/
+contacts/
+attendees/
 *.pem
 *.crt
 *.json
-*.csv
-*.log
-*.err
