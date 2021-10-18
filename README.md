@@ -1,8 +1,9 @@
-CovPass Check
-=============
+Yet Another CovPass Checker
+===========================
 
-Im WS21/22 müssen min. 10% der Teilnehmer von Lehrveranstaltungen bis zu 50
-Teilnehmern getestet werden.
+Im WS21/22 müssen an der FAU min. 10% der Teilnehmer von Lehrveranstaltungen bis
+zu 50 Teilnehmern getestet werden
+([Quelle](https://www.fau.de/corona/3g-regel/#collapse_4)).
 
 Wie wäre es, wenn wir einfach am Eingang einen Notebook mit Webcam hinstellen,
 und Studis selbstständig ihren Code scannen lassen?

@@ -1,0 +1,9 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Version=1.0
+Type=Application
+Terminal=false
+Exec=/opt/yet-another-covpass-checker/start.sh
+Name=Yet Another CovPass Checker
+Comment=Yet Another CovPass Checker
+Icon=/opt/yet-another-covpass-checker/icon.png

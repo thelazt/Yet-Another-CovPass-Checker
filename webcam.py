@@ -27,7 +27,7 @@ parser.add_argument('-m', '--mirror', action='store_true', help='mirror webcam (
 parser.add_argument('-r', '--resolution', help='webcam resolution (WxH)', default='1280x720')
 parser.add_argument('-s', '--sound', action='store_true', help='accoustic notification after each new (!) scan')
 parser.add_argument('-t', '--trustlist', type=argparse.FileType('rb'), help='use given trustlist (json) instead of downloading new one')
-parser.add_argument('-w', '--window', help='window name', default='CovPass Check')
+parser.add_argument('-w', '--window', help='window name', default='Yet Another CovPass Checker')
 
 debug = parser.add_argument_group('debug', description='These options are only for debugging & testing and should not be used in production!')
 debug.add_argument('-q', '--qrcode', nargs='*', help='Manually process contents of given QR code(s)')

@@ -1,9 +1,0 @@
-#!/usr/bin/env xdg-open
-[Desktop Entry]
-Version=1.0
-Type=Application
-Terminal=false
-Exec=/opt/covpass-check/start.sh
-Name=CovPass-Check
-Comment=CovPass-Check
-Icon=/opt/covpass-check/icon.png

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Parameter: akkustische Mitteilung, vollbild, spiegeln
-PARAMS="-s -f -m -Q qrcodes.txt"
+PARAMS="-s -f -m"
 
 
 # Wechsle in Skriptverzeichnis
