@@ -49,6 +49,7 @@ Rekursiv (mit Submodule) klonen, Abhängigkeiten installieren und ausführen, z.
     cd covpass-check
     sudo apt install zenity libzbar0
     pip3 install -r requirements.txt
+    python3 get_rules.py
     python3 webcam.py
 
 Weitere Informationen via

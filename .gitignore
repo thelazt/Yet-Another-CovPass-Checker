@@ -1,6 +1,8 @@
 __pycache__/
 contacts/
 attendees/
+rules/
+valuesets/
 *.pem
 *.crt
 *.json

@@ -5,8 +5,11 @@ from __future__ import print_function
 import os
 import sys
 import json
+import jsonschema
 from verify_ehc import *
 from datetime import datetime, timedelta
+from json_logic.cert_logic import certLogic
+from json_logic.cert_logic.extras import EXTRAS
 import time
 import pyzbar.pyzbar as pyzbar
 import numpy as np
@@ -25,8 +28,11 @@ parser.add_argument('-F', '--freeze', type=float, help='seconds to freeze image 
 parser.add_argument('-l', '--log', type=argparse.FileType('a'), help='access log file', default=sys.stderr)
 parser.add_argument('-m', '--mirror', action='store_true', help='mirror webcam (flip horizontal)')
 parser.add_argument('-r', '--resolution', help='webcam resolution (WxH)', default='1280x720')
+parser.add_argument('-R', '--rules', help='Path to directory containing certLogic rules', default='rules')
 parser.add_argument('-s', '--sound', action='store_true', help='accoustic notification after each new (!) scan')
+parser.add_argument('-S', '--schema', help='JSON schema for payload', default='DCC.combined-schema.json')
 parser.add_argument('-t', '--trustlist', type=argparse.FileType('rb'), help='use given trustlist (json) instead of downloading new one')
+parser.add_argument('-V', '--valuesets', help='Path to directory containung valueset for certLogic', default='valuesets')
 parser.add_argument('-w', '--window', help='window name', default='Yet Another CovPass Checker')
 
 debug = parser.add_argument_group('debug', description='These options are only for debugging & testing and should not be used in production!')
@@ -70,6 +76,23 @@ def normalize(s):
        s = s.replace(f, t)
     return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn').strip()
 
+valuesets = { }
+if not args.skip_validation:
+    for file in os.listdir(args.valuesets):
+        with open(args.valuesets + '/' + file) as f:
+            v = json.loads(f.read())
+            valuesets[v['valueSetId']] = v['valueSetValues']
+    if not valuesets:
+        print("no valuesets - run get_rules.py!")
+        sys.exit(1)
+
+schema = { }
+if os.path.exists(args.schema):
+    with open(args.schema) as f:
+        schema = json.loads(f.read())
+else:
+    print('Schema ' + args.schema + ' not found!')
+
 EPOCH = datetime(1970, 1, 1)
 def verify(ehc_msg, ehc_payload):
     global certs, EPOCH
@@ -88,99 +111,42 @@ def verify(ehc_msg, ehc_payload):
     return False
 
 # https://github.com/eu-digital-green-certificates/dgc-business-rules-testdata/tree/main/DE
-def validate(data):
-    # vaccinated
-    if 'v' in data:
-        # https://github.com/ehn-dcc-development/ehn-dcc-valuesets/blob/release/2.1.0/vaccine-medicinal-product.json
-        allowed_products = [ 'EU/1/20/1507', 'EU/1/20/1525', 'EU/1/20/1528', 'EU/1/21/1529' ]
-        dose_num = int(data['v'][0]['dn'])
-        series_dose = int(data['v'][0]['sd'])
-        date = datetime.strptime(data['v'][0]['dt'], '%Y-%m-%d')
-        medicinal_product = data['v'][0]['mp']
+def validate(payload):
+    # Try to validate payload
+    if schema:
+        try:
+            jsonschema.validate(payload, schema)
+        except jsonschema.exceptions.ValidationError as error:
+            print('Payload does not match schema: ' + str(error))
+            return False
+        if args.verbose:
+            print('Payload matches schema');
 
-        # VR-DE-0002
-        if not medicinal_product in allowed_products:
-            print(f'Only the following vaccines are accepted: AstraZeneca, Biontech, Janssen, Moderna.')
-            return False
-        # VR-DE-0001
-        elif dose_num < series_dose:
-            print(f'The vaccination schedule must be complete ({dose_num} / {series_dose}).')
-            return False
-        # VR-DE-0003
-        elif not (date + timedelta(days=15) <= datetime.now() or dose_num > 2 or (dose_num > 1 and medicinal_product == "EU/1/20/1525") or (series_dose == 1 and dose_num == 1 and medicinal_product in [ 'EU/1/20/1507', 'EU/1/20/1528', 'EU/1/20/1529' ])):
-            print(f'At least 14 days must have elapsed since completing the primary course of immunization ({date}). A booster shot or vaccination of someone who recovered from COVID-19 is valid immediately as long as it is clearly identified as such.')
-            return False
-        # VR-DE-0004
-        elif date + timedelta(days=365) < datetime.now():
-            print(f'Vaccine is not anymore effective (365 days after {date}!)')
-            return False
-        else:
-            return True
+    # Data for certLogic
+    data = {
+        'payload': payload,
+        'external': {
+            'validationClock': certLogic({'formatTime':{'now':''}}, None, EXTRAS),
+            'valueSets': valuesets
+        }
+    }
 
-    # tested
-    elif 't' in data:
-        test_type = data['t'][0]['tt']
-        test_result = data['t'][0]['tr']
-        sample_collection = datetime.strptime(data['t'][0]['sc'], '%Y-%m-%dT%H:%M:%SZ')
-
-        if sample_collection > datetime.now():
-            print(f'Invalid sample collection time {sample_collection} (in the future!)')
-            return False
-
-        # TR-DE-0004
-        if test_result == "260373001":
-            print(f'The test result must be negative.')
-            return False
-        elif test_result != "260415000":
-            print(f'The test result must be negative ({test_result} is invalid).')
-            return False
-
-        # Rapid antigen test
-        if test_type == 'LP217198-3':
-            # TR-DE-0003 / 24h
-            if sample_collection + timedelta(hours=24) < datetime.now():
-                print(f'The sample for an antigen test (e.g., rapid test) must have been taken no longer than 24 hours ago ({sample_collection}).')
+    # Check against all available rules
+    for file in os.listdir(args.rules):
+        with open(args.rules + '/' + file) as f:
+            rule = json.loads(f.read())
+            if certLogic({'before':[{'now':[]},rule['ValidFrom']]}, None, EXTRAS) or certLogic({'after':[{'now':[]},rule['ValidTo']]}, None, EXTRAS):
+                if args.verbose:
+                    print('Skip ' + rule['Identifier']);
+                continue
+            elif args.verbose:
+                print('Checking ' + rule['Identifier']);
+            if not certLogic(rule['Logic'], data):
+                print(rule['Identifier'] + ' failed: ' + rule['Description'][0]['desc'])
                 return False
-            else:
-                return True
 
-        # Molecular test (nucleic acid amplification test)
-        elif test_type == 'LP6464-4':
-            # TR-DE-0003 / 48h
-            if sample_collection + timedelta(hours=48) < datetime.now():
-                print(f'The sample for an NAA test (e.g., PCR) must have been taken no longer than 48 hours ago ({sample_collection}).')
-                return False
-            else:
-                return True
-
-        # TR-DE-0001
-        else:
-            print('This must be an antigen test (e.g., rapid test) or NAA test (e.g., PCR) instead of {test_type}', test_type)
-            return False
-
-    # recovered
-    elif 'r' in data:
-        first_positive = datetime.strptime(data['r'][0]['fr'], '%Y-%m-%d')
-
-        if first_positive > datetime.now():
-            print(f'Invalid positive result date {first_positive} (in the future!)')
-            return False
-        # RR-DE-0001
-        elif first_positive + timedelta(days=28) > datetime.now():
-            print(f'The positive NAA test result ({first_positive}) must be older than 28 days.')
-            return False
-        # RR-DE-0001
-        elif first_positive + timedelta(days=180) < datetime.now():
-            print(f'The positive NAA test result ({first_positive}) must be no older than 6 months.')
-            return False
-        else:
-            return True
-
-    # unknown
-    else:
-        print("Unknown payload data type", [i for i in data.keys() if i not in ['dob', 'nam', 'ver']])
-
-    return False
+    # All good.
+    return True
 
 uniqusers = []
 validusers = args.count

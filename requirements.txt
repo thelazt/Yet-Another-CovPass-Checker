@@ -15,3 +15,5 @@ pycv2
 opencv-python
 numpy
 playsound
+panzi-json-logic
+jsonschema

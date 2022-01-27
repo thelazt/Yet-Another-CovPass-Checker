@@ -43,6 +43,16 @@ elif [[ $(date --date="$TRUSTLIST_MAX_AGE ago" +%s) -gt $(date -r "$TRUSTLIST" +
 	bash -c "python3 verify_ehc.py --certs-from $CERTS --save-certs tmp-$TRUSTLIST && mv -f tmp-$TRUSTLIST $TRUSTLIST && echo done" &
 fi
 
+# Lade Regeln
+echo "Downloading/Updating rules and valuesets"
+python3 get_rules.py DE
+
+# Lade Schema
+if [[ ! -f "DCC.combined-schema.json" ]] ; then
+	echo "Downloading schema file"
+	wget "https://github.com/ehn-dcc-development/ehn-dcc-schema/raw/release/1.3.0/DCC.combined-schema.json"
+fi
+
 # Wähle Teilnehmerliste aus (oder `Abbrechen` für keine)
 CONTACTLOGFILE="$(date +%Y%m%d%H%M)"
 if [[ -d "$ATTENDEEDIR" ]] && compgen -G $ATTENDEEDIR/*.csv > /dev/null ; then
