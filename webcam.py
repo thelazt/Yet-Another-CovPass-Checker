@@ -21,6 +21,8 @@ from playsound import playsound
 
 parser = argparse.ArgumentParser(description='CovPass Check via Webcam (PoC)')
 parser.add_argument('-a', '--allowed', type=argparse.FileType('r'), help='list of allowed names')
+parser.add_argument('-b', '--booster', action='store_true', help='Check booster notification rules')
+parser.add_argument('-B', '--boosterrules', help='Path to directory containing certLogic booster notification rules', default='bnrules')
 parser.add_argument('-c', '--count', type=int, help='initial count value', default=0)
 parser.add_argument('-d', '--device', type=int,help='webcam device number (/dev/videoX)', default=0)
 parser.add_argument('-f', '--fullscreen', action='store_true', help='start in full screen')
@@ -111,6 +113,20 @@ def verify(ehc_msg, ehc_payload):
     return False
 
 # https://github.com/eu-digital-green-certificates/dgc-business-rules-testdata/tree/main/DE
+def validate_rule(path, data, valid_if):
+    with open(path) as f:
+        rule = json.loads(f.read())
+        if certLogic({'before':[{'now':[]},rule['ValidFrom']]}, None, EXTRAS) or certLogic({'after':[{'now':[]},rule['ValidTo']]}, None, EXTRAS):
+            if args.verbose:
+                print('Skip ' + rule['Identifier']);
+            return True
+        elif args.verbose:
+            print('Checking ' + rule['Identifier']);
+        if certLogic(rule['Logic'], data) != valid_if:
+            print(rule['Identifier'] + ' failed: ' + rule['Description'][0]['desc'])
+            return False
+    return True
+
 def validate(payload):
     # Try to validate payload
     if schema:
@@ -133,16 +149,14 @@ def validate(payload):
 
     # Check against all available rules
     for file in os.listdir(args.rules):
-        with open(args.rules + '/' + file) as f:
-            rule = json.loads(f.read())
-            if certLogic({'before':[{'now':[]},rule['ValidFrom']]}, None, EXTRAS) or certLogic({'after':[{'now':[]},rule['ValidTo']]}, None, EXTRAS):
-                if args.verbose:
-                    print('Skip ' + rule['Identifier']);
-                continue
-            elif args.verbose:
-                print('Checking ' + rule['Identifier']);
-            if not certLogic(rule['Logic'], data):
-                print(rule['Identifier'] + ' failed: ' + rule['Description'][0]['desc'])
+        if not validate_rule(args.rules + '/' + file, data, True):
+           return False
+
+    # Check against all available booster rules, if required
+    if args.booster:
+        for file in os.listdir(args.boosterrules):
+            # "Booster Notification" rules --> valid if False (= no notification)
+            if not validate_rule(args.boosterrules + '/' + file, data, False):
                 return False
 
     # All good.

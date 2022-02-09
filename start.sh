@@ -73,6 +73,6 @@ for f in $CONTACTDIR/* ; do
 done
 
 # Starte Webcamanwendung (Beenden mit `q`)
-python3 webcam.py ${PARAMS} -t $TRUSTLIST -l "${CONTACTDIR}/${CONTACTLOGFILE}.log" >/dev/null 2>&1
+python3 webcam.py ${PARAMS} -t $TRUSTLIST -l "${CONTACTDIR}/${CONTACTLOGFILE}.log" $@ >/dev/null 2>&1
 
 
